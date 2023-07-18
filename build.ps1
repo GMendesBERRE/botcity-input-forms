@@ -1,0 +1,1 @@
+Compress-Archive -LiteralPath . -DestinationPath "botcity-input-forms.zip" -Force
