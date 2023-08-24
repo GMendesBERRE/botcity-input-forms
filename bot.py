@@ -10,7 +10,6 @@ import sys
 
 from settings.logger import logger
 
-
 # Disable errors if we are not connected to Maestro
 BotMaestroSDK.RAISE_NOT_CONNECTED = False
 
