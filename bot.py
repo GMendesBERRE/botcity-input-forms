@@ -1,85 +1,81 @@
-from botcity.web import WebBot, Browser, By
+from botcity.web import WebBot
 from botcity.maestro import *
-from botcity.plugins.files import BotFilesPlugin
-from botcity.plugins.excel import BotExcelPlugin
+
+from pages.rpa_challenge import RpaChallengePage
+
+from settings.setup import setup
+from settings.config import config
+
+import sys
+
+from settings.logger import logger
+
 
 # Disable errors if we are not connected to Maestro
 BotMaestroSDK.RAISE_NOT_CONNECTED = False
 
-def setup_bot(bot:WebBot):
-    bot.headless = False
-    bot.browser = Browser.CHROME
-    bot.driver_path = r"webdrivers\chromedriver.exe"
 
-    return bot
+def main() -> None:
+    try: 
+        maestro = BotMaestroSDK.from_sys_args()
+        execution = maestro.get_execution()
 
-def main():
-    files = BotFilesPlugin()
-    bot_excel = BotExcelPlugin()
+        logger.info(f"Task ID is: {execution.task_id}")
+        logger.info(f"Task Parameters are: {execution.parameters}")
 
-    maestro = BotMaestroSDK.from_sys_args()
-    execution = maestro.get_execution()
-
-    print(f"Task ID is: {execution.task_id}")
-    print(f"Task Parameters are: {execution.parameters}")
-
-    bot = WebBot()
-    bot = setup_bot(bot)
+        bot = WebBot()
     
-    bot.browse("https://www.rpachallenge.com/")
+        bot = setup(maestro, bot)
+        process(maestro, bot, execution)
 
-    bot.find_element("//a[text() = 'Input Forms']", By.XPATH).click()
-    # bot.find_element("//a[text() = ' Download Excel ']", By.XPATH).click()
+    except Exception as e:
+        logger.critical(e, exc_info=True)
 
-    with files.wait_for_file(directory_path=r"D:\projects\botcity-input-forms", file_extension=".xlsx", timeout=300000):
-        bot.find_element("//a[text() = ' Download Excel ']", By.XPATH).click()
-    file = files.get_last_created_file(directory_path=r"D:\projects\botcity-input-forms", file_extension=".xlsx")
-    
-    bot_excel.read(file)
+        exception_message, _, _ = sys.exc_info()
 
-    df = bot_excel.as_dataframe()
-    df.columns = df.iloc[0]
-    df = df[1:]
+        maestro.error(task_id=execution.task_id, exception=e)
+        maestro.finish_task(
+            task_id=execution.task_id,
+            status=AutomationTaskFinishStatus.FAILED,
+            message=str(exception_message)
+        )
 
-    bot.find_element("//button[text()='Start']", by=By.XPATH).click()
 
-    for index, row in df.iterrows():
-        bot.find_element("//label[text()='First Name']/../input", by=By.XPATH).send_keys(row["First Name"])
-        bot.find_element("//label[text()='Last Name']/../input", by=By.XPATH).send_keys(row["Last Name "])
-        bot.find_element("//label[text()='Company Name']/../input", by=By.XPATH).send_keys(row["Company Name"])
-        bot.find_element("//label[text()='Role in Company']/../input", by=By.XPATH).send_keys(row["Role in Company"])
-        bot.find_element("//label[text()='Address']/../input", by=By.XPATH).send_keys(row["Address"])
-        bot.find_element("//label[text()='Email']/../input", by=By.XPATH).send_keys(row["Email"])
-        bot.find_element("//label[text()='Phone Number']/../input", by=By.XPATH).send_keys(row["Phone Number"])
+    else:
+        logger.info("Bot finished successfully!")
+        maestro.finish_task(
+            task_id=execution.task_id,
+            status=AutomationTaskFinishStatus.SUCCESS,
+            message="Task Finished OK."
+        )
 
-        bot.find_element("//input[@type='submit']", by=By.XPATH).click()
 
-    bot.wait(3000)
+def process(maestro: BotMaestroSDK, bot: WebBot, execution: BotExecution) -> None:
+    """This function defines the steps to run the bot
 
+    Args:
+        maestro (BotMaestroSDK): Maestro instance
+        bot (WebBot): Bot instance
+        execution (BotExecution): Execution instance
+    """
+
+    rpa_challenge = RpaChallengePage(bot)
+
+    rpa_challenge.select_challenge()
+    data = rpa_challenge.download_file()
+    rpa_challenge.start_challenge()
+
+    for _, row in data.iterrows():
+        rpa_challenge.fill_in_user(row)
+
+    bot.screenshot(filepath=config.screenshot_file)
+    maestro.post_artifact(
+        task_id=execution.task_id,
+        artifact_name="Resultado",
+        filepath=config.screenshot_file
+    )
 
     bot.stop_browser()
 
-    maestro.finish_task(
-        task_id=execution.task_id,
-        status=AutomationTaskFinishStatus.SUCCESS,
-        message="Task Finished OK."
-    )
-
-
-def not_found(label):
-    print(f"Element not found: {label}")
-
-
 if __name__ == '__main__':
     main()
-
-
-
-# - SITE
-## - MENU
-### - FUNÇÃO
-#### - GET    -> Capturar informação
-#### - DEL    -> Deletar informação
-#### - PUT    -> Inserir informação
-#### - UPD    -> Atualizar informação 
-#### - NAV    -> Navegar no site
