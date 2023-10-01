@@ -4,8 +4,6 @@ from typing import Tuple
 
 class BasePage():
     """The BasePage class holds all common functionality across the website.
-    Also provides a nice wrapper when dealing with selenium functions that may
-    not be easy to understand.
     """
 
     def __init__(self, bot: WebBot):

@@ -27,7 +27,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 class MaestroLogHandler(logging.StreamHandler):
-    """This class handles the integration between python's logger and maestro logs
+    """ This class handles the integration between python's logger and maestro logs
     """
     def __init__(self, maestro: BotMaestroSDK):
         """This function initializes the object
