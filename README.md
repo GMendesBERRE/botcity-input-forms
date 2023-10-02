@@ -65,7 +65,7 @@ python bot.py
 
 ## ⛏️ Built Using <a name = "built_using"></a>
 
-- [BotCity](hhttps://www.botcity.dev/) - Build Python RPA with Enterprise-level orchestration.
+- [BotCity](https://www.botcity.dev/) - Build Python RPA with Enterprise-level orchestration.
 - [Pydantic](https://docs.pydantic.dev/latest/) - Pydantic is the most widely used data validation library for Python.
 - [Selenium](https://www.selenium.dev/) - Selenium automates browsers. 
 - [Pandas](https://pandas.pydata.org/) - Pandas is a fast, powerful, flexible and easy to use open source data analysis and manipulation tool
